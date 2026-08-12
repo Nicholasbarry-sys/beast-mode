@@ -574,23 +574,26 @@ const storage = {
   }
 };
 
-// Sign-in flow — uses redirect rather than a popup, since popups are
-// unreliable in mobile Safari and inside Home Screen "standalone" web apps.
+// Sign-in flow — uses a popup rather than a redirect. As of Safari 16.1+,
+// Apple's third-party cookie blocking breaks Firebase's signInWithRedirect
+// flow specifically (it relies on state stored on the firebaseapp.com auth
+// domain, which Safari treats as cross-site relative to this app's own
+// domain and blocks). Popups sidestep that entirely.
 const provider = new firebase.auth.GoogleAuthProvider();
 
 document.getElementById("signin-btn").addEventListener("click", () => {
-  document.getElementById("auth-error").style.display = "none";
-  auth.signInWithRedirect(provider);
+  const errEl = document.getElementById("auth-error");
+  errEl.style.display = "none";
+  auth.signInWithPopup(provider).catch(err => {
+    // Ignore benign "user closed the popup" cases; surface real failures.
+    if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
+    errEl.textContent = "Sign-in failed: " + err.message;
+    errEl.style.display = "block";
+  });
 });
 
 document.getElementById("signout-btn").addEventListener("click", () => {
   auth.signOut();
-});
-
-auth.getRedirectResult().catch(err => {
-  const errEl = document.getElementById("auth-error");
-  errEl.textContent = "Sign-in failed: " + err.message;
-  errEl.style.display = "block";
 });
 
 auth.onAuthStateChanged(user => {
