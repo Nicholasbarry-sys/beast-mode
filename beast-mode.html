@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beast Mode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232C2C2A'/%3E%3Ccircle cx='50' cy='38' r='22' fill='%23D85A30'/%3E%3Crect x='38' y='52' width='24' height='32' rx='9' fill='%23D85A30'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232C2C2A'/%3E%3Ccircle cx='50' cy='38' r='22' fill='%23D85A30'/%3E%3Crect x='38' y='52' width='24' height='32' rx='9' fill='%23D85A30'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Beast Mode">
+<meta name="theme-color" content="#2C2C2A">
+<style>
+  :root {
+    --bg: #ffffff;
+    --card: #f7f6f2;
+    --text: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-muted: #888780;
+    --border: #e2e0d8;
+    --accent: #1D9E75;
+    --accent-light: #E1F5EE;
+    --accent-dark: #085041;
+    --danger: #D85A30;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161a;
+      --card: #1f1f24;
+      --text: #f0efe9;
+      --text-secondary: #b4b2a9;
+      --text-muted: #888780;
+      --border: #33332f;
+      --accent: #5DCAA5;
+      --accent-light: #04342C;
+      --accent-dark: #9FE1CB;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 60px;
+  }
+  h1 { font-size: 19px; font-weight: 600; margin: 4px 0 2px; }
+  .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  .tab.active { color: var(--accent-dark); border-bottom: 2px solid var(--accent); }
+  .day-panel { display: none; }
+  .day-panel.active { display: block; }
+  .date-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .date-row label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .date-row input[type="date"] {
+    flex: 1;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    padding: 0 10px;
+    font-size: 13.5px;
+  }
+  .week-badge {
+    display: inline-block;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+  .exercise {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .ex-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .ex-name { font-size: 14.5px; font-weight: 500; margin: 0 0 2px; }
+  .ex-target { font-size: 12.5px; color: var(--text-secondary); margin: 0; }
+  .ex-link {
+    font-size: 12px;
+    color: var(--accent-dark);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .ex-inputs {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    align-items: center;
+  }
+  .ex-inputs input[type="text"] {
+    flex: 1;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0 10px;
+    font-size: 13.5px;
+  }
+  .ex-inputs input[type="text"]::placeholder { color: var(--text-muted); }
+  .done-check {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .done-check.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .save-bar {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    padding: 12px 0 4px;
+    margin-top: 8px;
+  }
+  .save-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .save-btn:active { opacity: 0.85; }
+  .save-status {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--accent-dark);
+    margin-top: 8px;
+    min-height: 16px;
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 20px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .history-item {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 0;
+    font-size: 13px;
+  }
+  .history-date { font-weight: 500; margin-bottom: 4px; }
+  .history-row { color: var(--text-secondary); font-size: 12.5px; display: flex; justify-content: space-between; }
+  .history-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0; }
+  .note {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-size: 12.5px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .clear-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 10px;
+  }
+  .intro {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  details.instructions {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+  details.instructions summary {
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--accent-dark);
+  }
+  details.instructions ol {
+    margin: 10px 0 0;
+    padding-left: 18px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  details.instructions li { margin-bottom: 4px; }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .stat-value { font-size: 19px; font-weight: 600; color: var(--accent-dark); }
+  .stat-label { font-size: 10.5px; color: var(--text-secondary); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .faff-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin: -6px 0 14px;
+    line-height: 1.5;
+  }
+  .chart-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+  .chart-section select {
+    width: 100%;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    padding: 0 8px;
+    margin-bottom: 10px;
+  }
+  .chart-empty { font-size: 12.5px; color: var(--text-muted); text-align: center; padding: 20px 0; }
+  .export-btn {
+    width: 100%;
+    padding: 11px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 14px;
+  }
+  .pr-tag {
+    display: inline-block;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0 2px;
+  }
+  .logo-text {
+    font-family: 'Anton', sans-serif;
+    line-height: 0.82;
+    transform: skewX(-6deg);
+  }
+  .logo-text .l1, .logo-text .l2 {
+    display: block;
+    font-size: 34px;
+    letter-spacing: 1px;
+  }
+  .logo-text .l1 {
+    color: var(--text);
+    -webkit-text-stroke: 1.5px var(--text);
+  }
+  .logo-text .l2 { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="logo-row">
+  <svg width="72" height="72" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a clenched fist wrapped in climbing finger tape">
+    <title>Beast Mode fist icon</title>
+    <path d="M42 132 L50 96 L34 70 Q30 62 38 56 L46 78 L44 50 Q44 42 52 42 Q60 42 60 50 L61 76 L60 44 Q60 36 68 36 Q76 36 76 44 L77 76 L79 46 Q79 38 87 38 Q95 38 95 46 L94 78 Q104 74 106 84 L100 108 Q97 122 84 130 L42 132 Z" fill="var(--text)"/>
+    <g stroke="var(--text)" stroke-width="1.5" fill="none" opacity="0.35">
+      <line x1="52" y1="46" x2="52" y2="74"/>
+      <line x1="68" y1="40" x2="68" y2="74"/>
+      <line x1="87" y1="42" x2="87" y2="76"/>
+    </g>
+    <g>
+      <rect x="30" y="60" width="72" height="11" rx="2" fill="#ffffff" transform="rotate(-18 66 65)"/>
+      <rect x="30" y="60" width="72" height="3" rx="1.5" fill="var(--danger)" transform="rotate(-18 66 65)"/>
+      <rect x="36" y="80" width="70" height="11" rx="2" fill="#ffffff" transform="rotate(-10 71 85)"/>
+      <rect x="36" y="80" width="70" height="3" rx="1.5" fill="var(--danger)" transform="rotate(-10 71 85)"/>
+      <rect x="40" y="100" width="66" height="10" rx="2" fill="#ffffff" transform="rotate(-4 73 105)"/>
+      <rect x="40" y="100" width="66" height="3" rx="1.5" fill="var(--danger)" transform="rotate(-4 73 105)"/>
+    </g>
+  </svg>
+  <div class="logo-text">
+    <span class="l1">BEAST</span>
+    <span class="l2">MODE</span>
+  </div>
+</div>
+<div class="intro">The scientifically-adjacent, gym-carpark-legendary training system engineered exclusively for the professional dirtbag — the one funding a full-send lifestyle with a 9-to-5 and a soul-crushing commute. Two nights a week. No fingerboard nonsense. Just enough gains to keep sending, skiing, spinning, and running like the gnar-shredding menace you've always been, right up until Monday's stand-up. Beast Mode isn't a phase. It's a lifestyle choice your physio will have opinions about.</div>
+
+<details class="instructions">
+  <summary>Instructions for recruits (if this was shared with you)</summary>
+  <ol>
+    <li>Save or bookmark this file — it's yours now, your own personal Beast Mode.</li>
+    <li>Every time you show up, set the session date first — it decides whether it's a bench week or shoulder press week.</li>
+    <li>Tap "Watch ↗" on any move you don't recognize before you attempt it with weight on it.</li>
+    <li>Log what you lifted, tick it off, hit save. Future you will thank present you.</li>
+    <li>Check the History tab occasionally to admire your own gains trajectory.</li>
+    <li>Your logged data lives only in this browser, on this device — it doesn't sync back to whoever sent you this, and it doesn't need a Claude account or subscription. If you clear Safari's data or switch browsers, your log resets, so use the CSV export on the History tab as a backup.</li>
+    <li>Beast Mode is self-administered. Consult reality (or a physio) if anything feels wrong.</li>
+  </ol>
+</details>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-value" id="stat-streak">—</div>
+    <div class="stat-label">Week streak</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-total">—</div>
+    <div class="stat-label">Sessions logged</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-pr">—</div>
+    <div class="stat-label">Latest PR</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tuesday">Tuesday</button>
+  <button class="tab" data-tab="thursday">Thursday</button>
+  <button class="tab" data-tab="history">History</button>
+</div>
+
+<!-- TUESDAY -->
+<div class="day-panel active" id="panel-tuesday">
+  <div class="date-row">
+    <label for="date-tuesday">Session date</label>
+    <input type="date" id="date-tuesday">
+  </div>
+  <div class="note">Lower body, core and back. Do this after climbing, not before.</div>
+  <div class="faff-note">No rest timer built in — that's on purpose. Use the gap to faff about, doomscroll for a bit, and generally waste exactly as much time as your body needs before the next set.</div>
+  <div id="tuesday-exercises"></div>
+  <div class="save-bar">
+    <button class="save-btn" id="save-tuesday">Save this session</button>
+    <div class="save-status" id="status-tuesday"></div>
+  </div>
+</div>
+
+<!-- THURSDAY -->
+<div class="day-panel" id="panel-thursday">
+  <div class="date-row">
+    <label for="date-thursday">Session date</label>
+    <input type="date" id="date-thursday">
+  </div>
+  <div class="week-badge" id="week-badge"></div>
+  <div class="note">Pulling, arms, and the alternating push. Do this after climbing.</div>
+  <div class="faff-note">Still no rest timer. Go faff about, doomscroll for a bit, and wander back over when you feel like it.</div>
+  <div id="thursday-exercises"></div>
+  <div class="save-bar">
+    <button class="save-btn" id="save-thursday">Save this session</button>
+    <div class="save-status" id="status-thursday"></div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="day-panel" id="panel-history">
+  <div class="chart-section">
+    <select id="chart-exercise"></select>
+    <div id="chart-container">
+      <canvas id="progress-canvas" width="340" height="150" style="width:100%; height:150px;"></canvas>
+      <div class="chart-empty" id="chart-empty" style="display:none;">No logged weights for this one yet</div>
+    </div>
+  </div>
+  <div class="section-title">Logged sessions</div>
+  <div id="history-list"></div>
+  <button class="clear-btn" id="clear-history">Clear all logged history</button>
+  <button class="export-btn" id="export-csv">Export log as CSV</button>
+</div>
+
+<script>
+// Fully local storage, backed by the browser's own localStorage — no Claude
+// account, no subscription, no published-artifact link required. Data lives
+// only in this browser on this device. Matches the get/set/list/delete
+// shape used throughout the rest of the file so nothing else has to change.
+const storage = {
+  async get(key) {
+    const v = localStorage.getItem(key);
+    if (v === null) throw new Error("not found");
+    return { key, value: v };
+  },
+  async set(key, value) {
+    localStorage.setItem(key, value);
+    return { key, value };
+  },
+  async list(prefix) {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!prefix || k.startsWith(prefix)) keys.push(k);
+    }
+    return { keys };
+  },
+  async delete(key) {
+    localStorage.removeItem(key);
+    return { key, deleted: true };
+  }
+};
+
+function ytLink(q) {
+  return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q + " exercise form");
+}
+
+function toDateInputValue(date) {
+  // Local-time yyyy-mm-dd, avoids UTC offset shifting the day
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + d;
+}
+
+// Week parity is driven entirely by the date typed into the field, using
+// ISO week number. This is deterministic from the date alone — no stored
+// anchor, so it can't drift or reset differently across devices.
+function getISOWeek(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+// isoYear can differ from the calendar year near Dec/Jan boundaries —
+// used as part of the streak key so weeks sort correctly year over year.
+function getISOWeekYear(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  return date.getUTCFullYear();
+}
+
+function weekKeyOf(dateStr) {
+  return getISOWeekYear(dateStr) * 100 + getISOWeek(dateStr);
+}
+
+function parseWeightNum(str) {
+  if (!str) return null;
+  const match = String(str).match(/-?\d+(\.\d+)?/);
+  return match ? parseFloat(match[0]) : null;
+}
+
+async function getAllRecords() {
+  const keysResult = await storage.list("session:");
+  const keys = (keysResult && keysResult.keys) ? keysResult.keys : [];
+  const records = [];
+  for (const k of keys) {
+    try {
+      const r = await storage.get(k);
+      if (r && r.value) records.push(JSON.parse(r.value));
+    } catch (e) { /* skip unreadable entries */ }
+  }
+  records.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return records;
+}
+
+// Walks all records in date order, tracking the best weight seen so far per
+// exercise. Every time a new entry beats that running best, it's a PR event.
+function computePREvents(recordsAsc) {
+  const best = {};
+  const events = [];
+  recordsAsc.forEach(rec => {
+    rec.entries.forEach(e => {
+      const w = parseWeightNum(e.weight);
+      if (w === null) return;
+      if (!(e.name in best) || w > best[e.name]) {
+        best[e.name] = w;
+        events.push({ date: rec.date, displayDate: rec.displayDate, name: e.name, weight: w });
+      }
+    });
+  });
+  return events;
+}
+
+function computeStreak(recordsAsc, todayStr) {
+  const weekStatus = {};
+  recordsAsc.forEach(rec => {
+    const key = weekKeyOf(rec.date);
+    if (!weekStatus[key]) weekStatus[key] = { tuesday: false, thursday: false };
+    weekStatus[key][rec.day.toLowerCase()] = true;
+  });
+  const completed = new Set(
+    Object.keys(weekStatus).filter(k => weekStatus[k].tuesday && weekStatus[k].thursday).map(Number)
+  );
+  let key = weekKeyOf(todayStr);
+  if (!completed.has(key)) key -= 1; // current week in progress doesn't break the streak
+  let streak = 0;
+  while (completed.has(key)) {
+    streak += 1;
+    key -= 1;
+  }
+  return streak;
+}
+
+async function refreshStats() {
+  let records;
+  try {
+    records = await getAllRecords();
+  } catch (err) {
+    return;
+  }
+  const streak = computeStreak(records, toDateInputValue(new Date()));
+  const prEvents = computePREvents(records);
+  const lastPR = prEvents.length ? prEvents[prEvents.length - 1] : null;
+
+  document.getElementById("stat-streak").textContent = streak;
+  document.getElementById("stat-total").textContent = records.length;
+  document.getElementById("stat-pr").textContent = lastPR
+    ? lastPR.name.split(" or ")[0].split(" ").slice(0, 2).join(" ")
+    : "None yet";
+
+  return { records, prEvents };
+}
+
+function formatDisplayDate(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}
+
+const tuesdayExercises = [
+  { id: "t1", name: "Goblet squat or trap bar deadlift", target: "3 x 6-8", ref: ytLink("goblet squat") },
+  { id: "t2", name: "Bulgarian split squat", target: "2 x 8 / side", ref: ytLink("bulgarian split squat") },
+  { id: "t3", name: "Single-arm DB row", target: "3 x 8-10 / side", ref: ytLink("single arm dumbbell row") },
+  { id: "t4", name: "Single-leg calf raise (straight knee)", target: "3 x 12-15 / side", ref: ytLink("single leg calf raise straight knee") },
+  { id: "t5", name: "Hanging knee raise or toes-to-bar", target: "3 x 8-10", ref: ytLink("hanging knee raise") },
+  { id: "t6", name: "Cable woodchop or Pallof press", target: "2 x 10 / side", ref: ytLink("pallof press") }
+];
+
+function buildThursdayExercises(isOddWeek) {
+  const push = isOddWeek
+    ? { id: "h2", name: "Bench press", target: "3 x 6-8", ref: ytLink("barbell bench press") }
+    : { id: "h2", name: "Shoulder press", target: "3 x 8-10", ref: ytLink("dumbbell shoulder press") };
+  return [
+    { id: "h1", name: "Weighted pull-ups or lat pulldown", target: "3 x 6-8", ref: ytLink("weighted pull up") },
+    push,
+    { id: "h3", name: "Single-leg calf raise (bent knee)", target: "3 x 12-15 / side", ref: ytLink("single leg calf raise bent knee soleus") },
+    { id: "h4", name: "Bicep curls", target: "2 x 10-12", ref: ytLink("dumbbell bicep curl") },
+    { id: "h5", name: "Tricep pushdown or dips", target: "2 x 10-12", ref: ytLink("tricep pushdown") },
+    { id: "h6", name: "Plank or ab wheel", target: "2 x 30-45s", ref: ytLink("ab wheel rollout") }
+  ];
+}
+
+let thursdayExercises = [];
+
+function renderExercises(list, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = list.map(ex => `
+    <div class="exercise" data-id="${ex.id}">
+      <div class="ex-header">
+        <div>
+          <p class="ex-name">${ex.name}</p>
+          <p class="ex-target">${ex.target}</p>
+        </div>
+        <a class="ex-link" href="${ex.ref}" target="_blank" rel="noopener">Watch ↗</a>
+      </div>
+      <div class="ex-inputs">
+        <input type="text" inputmode="decimal" placeholder="Weight / notes" data-field="weight" data-id="${ex.id}">
+        <div class="done-check" data-field="done" data-id="${ex.id}">✓</div>
+      </div>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".done-check").forEach(btn => {
+    btn.addEventListener("click", () => btn.classList.toggle("checked"));
+  });
+}
+
+renderExercises(tuesdayExercises, "tuesday-exercises");
+
+const dateTuesday = document.getElementById("date-tuesday");
+const dateThursday = document.getElementById("date-thursday");
+const todayStr = toDateInputValue(new Date());
+dateTuesday.value = todayStr;
+dateThursday.value = todayStr;
+
+function refreshThursday() {
+  const weekNum = getISOWeek(dateThursday.value);
+  const isOddWeek = weekNum % 2 === 1;
+  thursdayExercises = buildThursdayExercises(isOddWeek);
+  renderExercises(thursdayExercises, "thursday-exercises");
+  document.getElementById("week-badge").textContent =
+    formatDisplayDate(dateThursday.value) + " — " + (isOddWeek ? "Bench press week" : "Shoulder press week");
+}
+
+dateThursday.addEventListener("change", refreshThursday);
+refreshThursday();
+refreshStats();
+
+// Ask the browser to treat this site's storage as durable rather than
+// best-effort, reducing (not eliminating) the chance iOS clears it under
+// device storage pressure. Best-effort itself: unsupported browsers just
+// skip this silently, and even supporting ones don't guarantee it.
+if (typeof navigator !== "undefined" && navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().catch(function () { /* non-fatal if unsupported or denied */ });
+}
+
+// Tabs
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".day-panel").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+    if (tab.dataset.tab === "history") {
+      loadHistory();
+      renderChart();
+    }
+  });
+});
+
+const hypeMessages = [
+  "Beast mode: engaged.",
+  "Logged. Tendons have been notified.",
+  "That's in the books.",
+  "Filed under: gains.",
+  "Recorded for posterity, and gloating."
+];
+const prHypeMessages = [
+  "New PR. The beast has been fed.",
+  "PR alert — go tell someone who doesn't care.",
+  "Personal best. Physio bills incoming.",
+  "That's a PR. Full send, confirmed.",
+  "New number on the board. Insufferable in 3, 2, 1..."
+];
+
+async function saveSession(dayLabel, exercises, containerId, statusId, dateInputEl) {
+  const container = document.getElementById(containerId);
+  const dateStr = dateInputEl.value;
+  const statusEl = document.getElementById(statusId);
+  if (!dateStr) {
+    statusEl.textContent = "Pick a date first";
+    return;
+  }
+
+  const entries = [];
+  exercises.forEach(ex => {
+    const weightInput = container.querySelector(`input[data-id="${ex.id}"][data-field="weight"]`);
+    const doneBtn = container.querySelector(`.done-check[data-id="${ex.id}"]`);
+    entries.push({
+      name: ex.name,
+      target: ex.target,
+      weight: weightInput.value.trim(),
+      done: doneBtn.classList.contains("checked")
+    });
+  });
+
+  const record = {
+    day: dayLabel,
+    date: dateStr,
+    displayDate: formatDisplayDate(dateStr),
+    week: getISOWeek(dateStr),
+    entries: entries
+  };
+
+  const storageKey = "session:" + dateStr + ":" + dayLabel.toLowerCase();
+
+  try {
+    // Check for PRs against everything logged before this save, so today's
+    // numbers are compared to prior history rather than to themselves.
+    let hasPR = false;
+    try {
+      const priorRecords = await getAllRecords();
+      const priorBest = {};
+      priorRecords.forEach(rec => rec.entries.forEach(e => {
+        const w = parseWeightNum(e.weight);
+        if (w === null) return;
+        if (!(e.name in priorBest) || w > priorBest[e.name]) priorBest[e.name] = w;
+      }));
+      entries.forEach(e => {
+        const w = parseWeightNum(e.weight);
+        if (w === null) return;
+        if (!(e.name in priorBest) || w > priorBest[e.name]) hasPR = true;
+      });
+    } catch (err) { /* PR check is best-effort, saving still proceeds */ }
+
+    const result = await storage.set(storageKey, JSON.stringify(record));
+    if (result) {
+      const pool = hasPR ? prHypeMessages : hypeMessages;
+      const message = pool[Math.floor(Math.random() * pool.length)];
+      statusEl.textContent = "Saved for " + record.displayDate + " — " + message;
+      refreshStats();
+    } else {
+      statusEl.textContent = "Couldn't save — try again";
+    }
+  } catch (err) {
+    statusEl.textContent = "Couldn't save — try again";
+  }
+
+  setTimeout(() => { statusEl.textContent = ""; }, 5000);
+}
+
+document.getElementById("save-tuesday").addEventListener("click", () => {
+  saveSession("Tuesday", tuesdayExercises, "tuesday-exercises", "status-tuesday", dateTuesday);
+});
+document.getElementById("save-thursday").addEventListener("click", () => {
+  saveSession("Thursday", thursdayExercises, "thursday-exercises", "status-thursday", dateThursday);
+});
+
+async function loadHistory() {
+  const listEl = document.getElementById("history-list");
+  listEl.innerHTML = "<div class='history-empty'>Loading…</div>";
+  try {
+    const recordsAsc = await getAllRecords();
+    if (recordsAsc.length === 0) {
+      listEl.innerHTML = "<div class='history-empty'>No sessions logged yet</div>";
+      return;
+    }
+    const prEvents = computePREvents(recordsAsc);
+    const prLookup = new Set(prEvents.map(e => e.date + "|" + e.name));
+    const recordsDesc = [...recordsAsc].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+    listEl.innerHTML = recordsDesc.map(rec => `
+      <div class="history-item">
+        <div class="history-date">${rec.displayDate} — ${rec.day} (week ${rec.week})</div>
+        ${rec.entries.map(e => `
+          <div class="history-row">
+            <span>${e.name}${e.done ? " ✓" : ""}${prLookup.has(rec.date + "|" + e.name) ? '<span class="pr-tag">PR</span>' : ""}</span>
+            <span>${e.weight ? e.weight : "—"}</span>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+  } catch (err) {
+    listEl.innerHTML = "<div class='history-empty'>Couldn't load history</div>";
+  }
+}
+
+document.getElementById("clear-history").addEventListener("click", async () => {
+  if (!confirm("Clear all logged sessions? This can't be undone.")) return;
+  try {
+    const keysResult = await storage.list("session:");
+    const keys = (keysResult && keysResult.keys) ? keysResult.keys : [];
+    for (const k of keys) {
+      await storage.delete(k);
+    }
+    loadHistory();
+    refreshStats();
+    renderChart();
+  } catch (err) {
+    alert("Couldn't clear history — try again");
+  }
+});
+
+// Progress chart — plain canvas, no chart library needed.
+const allExerciseNames = [...tuesdayExercises, ...buildThursdayExercises(true), ...buildThursdayExercises(false)]
+  .map(e => e.name)
+  .filter((name, i, arr) => arr.indexOf(name) === i);
+
+const chartSelect = document.getElementById("chart-exercise");
+chartSelect.innerHTML = allExerciseNames.map(name => `<option value="${name}">${name}</option>`).join("");
+chartSelect.addEventListener("change", renderChart);
+
+async function renderChart() {
+  const canvas = document.getElementById("progress-canvas");
+  const emptyEl = document.getElementById("chart-empty");
+  const ctx = canvas.getContext("2d");
+  const selectedName = chartSelect.value;
+
+  let records;
+  try {
+    records = await getAllRecords();
+  } catch (err) {
+    records = [];
+  }
+
+  const points = [];
+  records.forEach(rec => {
+    rec.entries.forEach(e => {
+      if (e.name !== selectedName) return;
+      const w = parseWeightNum(e.weight);
+      if (w !== null) points.push({ date: rec.date, weight: w });
+    });
+  });
+
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+
+  if (points.length === 0) {
+    canvas.style.display = "none";
+    emptyEl.style.display = "block";
+    return;
+  }
+  canvas.style.display = "block";
+  emptyEl.style.display = "none";
+
+  const styles = getComputedStyle(document.documentElement);
+  const accentColor = styles.getPropertyValue("--accent").trim() || "#1D9E75";
+  const gridColor = styles.getPropertyValue("--border").trim() || "#e2e0d8";
+  const textColor = styles.getPropertyValue("--text-secondary").trim() || "#5f5e5a";
+
+  const padding = 28;
+  const minW = Math.min(...points.map(p => p.weight));
+  const maxW = Math.max(...points.map(p => p.weight));
+  const range = maxW - minW || 1;
+
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, height - padding);
+  ctx.lineTo(width - 8, height - padding);
+  ctx.stroke();
+
+  ctx.fillStyle = textColor;
+  ctx.font = "10px sans-serif";
+  ctx.fillText(String(maxW), 2, padding);
+  ctx.fillText(String(minW), 2, height - padding);
+
+  const xStep = points.length > 1 ? (width - padding - 16) / (points.length - 1) : 0;
+  const plot = points.map((p, i) => ({
+    x: padding + i * xStep,
+    y: height - padding - ((p.weight - minW) / range) * (height - padding * 2)
+  }));
+
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  plot.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
+  ctx.stroke();
+
+  ctx.fillStyle = accentColor;
+  plot.forEach(pt => {
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+renderChart();
+
+// CSV export
+document.getElementById("export-csv").addEventListener("click", async () => {
+  let records;
+  try {
+    records = await getAllRecords();
+  } catch (err) {
+    alert("Couldn't export — try again");
+    return;
+  }
+  if (records.length === 0) {
+    alert("Nothing logged yet to export");
+    return;
+  }
+  const rows = [["Date", "Day", "Week", "Exercise", "Target", "Weight/notes", "Done"]];
+  records.forEach(rec => {
+    rec.entries.forEach(e => {
+      rows.push([rec.date, rec.day, rec.week, e.name, e.target, e.weight, e.done ? "yes" : "no"]);
+    });
+  });
+  const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "beast-mode-log.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+</script>
+
+</body>
+</html>
