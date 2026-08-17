@@ -181,6 +181,11 @@
     cursor: pointer;
   }
   .save-btn:active { opacity: 0.85; }
+  .save-btn:disabled {
+    background: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
   .save-status {
     text-align: center;
     font-size: 12.5px;
@@ -460,39 +465,39 @@
 </div>
 
 <div class="tabs">
-  <button class="tab active" data-tab="tuesday">Tuesday</button>
-  <button class="tab" data-tab="thursday">Thursday</button>
+  <button class="tab active" data-tab="day1">Training Day 1</button>
+  <button class="tab" data-tab="day2">Training Day 2</button>
   <button class="tab" data-tab="history">History</button>
 </div>
 
-<!-- TUESDAY -->
-<div class="day-panel active" id="panel-tuesday">
+<!-- TRAINING DAY 1 -->
+<div class="day-panel active" id="panel-day1">
   <div class="date-row">
-    <label for="date-tuesday">Session date</label>
-    <input type="date" id="date-tuesday">
+    <label for="date-day1">Session date</label>
+    <input type="date" id="date-day1">
   </div>
   <div class="note">Lower body, core and back. Do this after climbing, not before.</div>
   <div class="faff-note">No rest timer built in — that's on purpose. Use the gap to faff about, doomscroll for a bit, and generally waste exactly as much time as your body needs before the next set.</div>
-  <div id="tuesday-exercises"></div>
+  <div id="day1-exercises"></div>
   <div class="save-bar">
-    <button class="save-btn" id="save-tuesday">Save this session</button>
-    <div class="save-status" id="status-tuesday"></div>
+    <button class="save-btn" id="save-day1" disabled>Save this session</button>
+    <div class="save-status" id="status-day1"></div>
   </div>
 </div>
 
-<!-- THURSDAY -->
-<div class="day-panel" id="panel-thursday">
+<!-- TRAINING DAY 2 -->
+<div class="day-panel" id="panel-day2">
   <div class="date-row">
-    <label for="date-thursday">Session date</label>
-    <input type="date" id="date-thursday">
+    <label for="date-day2">Session date</label>
+    <input type="date" id="date-day2">
   </div>
   <div class="week-badge" id="week-badge"></div>
   <div class="note">Pulling, arms, and the alternating push. Do this after climbing.</div>
   <div class="faff-note">Still no rest timer. Go faff about, doomscroll for a bit, and wander back over when you feel like it.</div>
-  <div id="thursday-exercises"></div>
+  <div id="day2-exercises"></div>
   <div class="save-bar">
-    <button class="save-btn" id="save-thursday">Save this session</button>
-    <div class="save-status" id="status-thursday"></div>
+    <button class="save-btn" id="save-day2" disabled>Save this session</button>
+    <div class="save-status" id="status-day2"></div>
   </div>
 </div>
 
@@ -696,15 +701,18 @@ function computePREvents(recordsAsc) {
   return events;
 }
 
+// A week counts as complete once two distinct training days have been
+// logged in it — not tied to any specific day names, so the streak still
+// works if the two training days get renamed or moved around the week.
 function computeStreak(recordsAsc, todayStr) {
-  const weekStatus = {};
+  const weekDays = {};
   recordsAsc.forEach(rec => {
     const key = weekKeyOf(rec.date);
-    if (!weekStatus[key]) weekStatus[key] = { tuesday: false, thursday: false };
-    weekStatus[key][rec.day.toLowerCase()] = true;
+    if (!weekDays[key]) weekDays[key] = new Set();
+    weekDays[key].add(rec.day);
   });
   const completed = new Set(
-    Object.keys(weekStatus).filter(k => weekStatus[k].tuesday && weekStatus[k].thursday).map(Number)
+    Object.keys(weekDays).filter(k => weekDays[k].size >= 2).map(Number)
   );
   let key = weekKeyOf(todayStr);
   if (!completed.has(key)) key -= 1; // current week in progress doesn't break the streak
@@ -742,7 +750,7 @@ function formatDisplayDate(dateStr) {
   return date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
 
-const tuesdayExercises = [
+const day1Exercises = [
   { id: "t1", name: "Goblet squat or trap bar deadlift", target: "3 x 6-8", ref: ytLink("goblet squat") },
   { id: "t2", name: "Bulgarian split squat", target: "2 x 8 / side", ref: ytLink("bulgarian split squat") },
   { id: "t3", name: "Single-arm DB row", target: "3 x 8-10 / side", ref: ytLink("single arm dumbbell row") },
@@ -751,7 +759,7 @@ const tuesdayExercises = [
   { id: "t6", name: "Cable woodchop or Pallof press", target: "2 x 10 / side", ref: ytLink("pallof press") }
 ];
 
-function buildThursdayExercises(isOddWeek) {
+function buildDay2Exercises(isOddWeek) {
   const push = isOddWeek
     ? { id: "h2", name: "Bench press", target: "3 x 6-8", ref: ytLink("barbell bench press") }
     : { id: "h2", name: "Shoulder press", target: "3 x 8-10", ref: ytLink("dumbbell shoulder press") };
@@ -765,9 +773,16 @@ function buildThursdayExercises(isOddWeek) {
   ];
 }
 
-let thursdayExercises = [];
+let day2Exercises = [];
 
-function renderExercises(list, containerId) {
+// Save is disabled until at least one exercise is ticked off, so an empty
+// session (nothing actually done) can't be logged as a completed workout.
+function updateSaveButtonState(containerId, saveBtnId) {
+  const anyChecked = document.querySelectorAll(`#${containerId} .done-check.checked`).length > 0;
+  document.getElementById(saveBtnId).disabled = !anyChecked;
+}
+
+function renderExercises(list, containerId, saveBtnId) {
   const container = document.getElementById(containerId);
   container.innerHTML = list.map(ex => `
     <div class="exercise" data-id="${ex.id}">
@@ -786,29 +801,34 @@ function renderExercises(list, containerId) {
   `).join("");
 
   container.querySelectorAll(".done-check").forEach(btn => {
-    btn.addEventListener("click", () => btn.classList.toggle("checked"));
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("checked");
+      updateSaveButtonState(containerId, saveBtnId);
+    });
   });
+
+  updateSaveButtonState(containerId, saveBtnId);
 }
 
-renderExercises(tuesdayExercises, "tuesday-exercises");
+renderExercises(day1Exercises, "day1-exercises", "save-day1");
 
-const dateTuesday = document.getElementById("date-tuesday");
-const dateThursday = document.getElementById("date-thursday");
+const dateDay1 = document.getElementById("date-day1");
+const dateDay2 = document.getElementById("date-day2");
 const todayStr = toDateInputValue(new Date());
-dateTuesday.value = todayStr;
-dateThursday.value = todayStr;
+dateDay1.value = todayStr;
+dateDay2.value = todayStr;
 
-function refreshThursday() {
-  const weekNum = getISOWeek(dateThursday.value);
+function refreshDay2() {
+  const weekNum = getISOWeek(dateDay2.value);
   const isOddWeek = weekNum % 2 === 1;
-  thursdayExercises = buildThursdayExercises(isOddWeek);
-  renderExercises(thursdayExercises, "thursday-exercises");
+  day2Exercises = buildDay2Exercises(isOddWeek);
+  renderExercises(day2Exercises, "day2-exercises", "save-day2");
   document.getElementById("week-badge").textContent =
-    formatDisplayDate(dateThursday.value) + " — " + (isOddWeek ? "Bench press week" : "Shoulder press week");
+    formatDisplayDate(dateDay2.value) + " — " + (isOddWeek ? "Bench press week" : "Shoulder press week");
 }
 
-dateThursday.addEventListener("change", refreshThursday);
-refreshThursday();
+dateDay2.addEventListener("change", refreshDay2);
+refreshDay2();
 refreshStats();
 
 // Ask the browser to treat this site's storage as durable rather than
@@ -848,7 +868,7 @@ const prHypeMessages = [
   "New number on the board. Insufferable in 3, 2, 1..."
 ];
 
-async function saveSession(dayLabel, exercises, containerId, statusId, dateInputEl) {
+async function saveSession(dayKey, dayLabel, exercises, containerId, statusId, dateInputEl) {
   const container = document.getElementById(containerId);
   const dateStr = dateInputEl.value;
   const statusEl = document.getElementById(statusId);
@@ -877,7 +897,7 @@ async function saveSession(dayLabel, exercises, containerId, statusId, dateInput
     entries: entries
   };
 
-  const storageKey = "session:" + dateStr + ":" + dayLabel.toLowerCase();
+  const storageKey = "session:" + dateStr + ":" + dayKey;
 
   try {
     // Check for PRs against everything logged before this save, so today's
@@ -914,11 +934,11 @@ async function saveSession(dayLabel, exercises, containerId, statusId, dateInput
   setTimeout(() => { statusEl.textContent = ""; }, 5000);
 }
 
-document.getElementById("save-tuesday").addEventListener("click", () => {
-  saveSession("Tuesday", tuesdayExercises, "tuesday-exercises", "status-tuesday", dateTuesday);
+document.getElementById("save-day1").addEventListener("click", () => {
+  saveSession("day1", "Training Day 1", day1Exercises, "day1-exercises", "status-day1", dateDay1);
 });
-document.getElementById("save-thursday").addEventListener("click", () => {
-  saveSession("Thursday", thursdayExercises, "thursday-exercises", "status-thursday", dateThursday);
+document.getElementById("save-day2").addEventListener("click", () => {
+  saveSession("day2", "Training Day 2", day2Exercises, "day2-exercises", "status-day2", dateDay2);
 });
 
 async function loadHistory() {
@@ -967,7 +987,7 @@ document.getElementById("clear-history").addEventListener("click", async () => {
 });
 
 // Progress chart — plain canvas, no chart library needed.
-const allExerciseNames = [...tuesdayExercises, ...buildThursdayExercises(true), ...buildThursdayExercises(false)]
+const allExerciseNames = [...day1Exercises, ...buildDay2Exercises(true), ...buildDay2Exercises(false)]
   .map(e => e.name)
   .filter((name, i, arr) => arr.indexOf(name) === i);
 
