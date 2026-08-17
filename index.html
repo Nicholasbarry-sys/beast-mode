@@ -186,6 +186,41 @@
     color: var(--text-muted);
     cursor: not-allowed;
   }
+  .add-exercise-row {
+    display: flex;
+    gap: 8px;
+    margin: 4px 0 16px;
+  }
+  .add-exercise-row select {
+    flex: 1;
+    min-width: 0;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 13px;
+    padding: 0 8px;
+  }
+  .add-exercise-row button {
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .add-exercise-row button:active { opacity: 0.85; }
+  .add-exercise-row select:disabled,
+  .add-exercise-row button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
   .save-status {
     text-align: center;
     font-size: 12.5px;
@@ -479,6 +514,10 @@
   <div class="note">Lower body, core and back. Do this after climbing, not before.</div>
   <div class="faff-note">No rest timer built in — that's on purpose. Use the gap to faff about, doomscroll for a bit, and generally waste exactly as much time as your body needs before the next set.</div>
   <div id="day1-exercises"></div>
+  <div class="add-exercise-row">
+    <select id="add-exercise-select-day1"></select>
+    <button type="button" id="add-exercise-btn-day1">+ Add exercise</button>
+  </div>
   <div class="save-bar">
     <button class="save-btn" id="save-day1" disabled>Save this session</button>
     <div class="save-status" id="status-day1"></div>
@@ -495,6 +534,10 @@
   <div class="note">Pulling, arms, and the alternating push. Do this after climbing.</div>
   <div class="faff-note">Still no rest timer. Go faff about, doomscroll for a bit, and wander back over when you feel like it.</div>
   <div id="day2-exercises"></div>
+  <div class="add-exercise-row">
+    <select id="add-exercise-select-day2"></select>
+    <button type="button" id="add-exercise-btn-day2">+ Add exercise</button>
+  </div>
   <div class="save-bar">
     <button class="save-btn" id="save-day2" disabled>Save this session</button>
     <div class="save-status" id="status-day2"></div>
@@ -778,6 +821,13 @@ function buildDay2Exercises(isOddWeek) {
 
 let day2Exercises = [];
 
+// Every exercise across both days, deduped by name — the source list for
+// each day's "add an exercise" picker and the history chart's selector.
+const exerciseCatalogue = new Map();
+[...day1Exercises, ...buildDay2Exercises(true), ...buildDay2Exercises(false)].forEach(ex => {
+  if (!exerciseCatalogue.has(ex.name)) exerciseCatalogue.set(ex.name, ex);
+});
+
 // Save is disabled until at least one exercise is ticked off, so an empty
 // session (nothing actually done) can't be logged as a completed workout.
 function updateSaveButtonState(containerId, saveBtnId) {
@@ -785,9 +835,8 @@ function updateSaveButtonState(containerId, saveBtnId) {
   document.getElementById(saveBtnId).disabled = !anyChecked;
 }
 
-function renderExercises(list, containerId, saveBtnId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = list.map(ex => `
+function exerciseHTML(ex) {
+  return `
     <div class="exercise" data-id="${ex.id}">
       <div class="ex-header">
         <div>
@@ -801,16 +850,58 @@ function renderExercises(list, containerId, saveBtnId) {
         <div class="done-check" data-field="done" data-id="${ex.id}">✓</div>
       </div>
     </div>
-  `).join("");
+  `;
+}
 
-  container.querySelectorAll(".done-check").forEach(btn => {
-    btn.addEventListener("click", () => {
-      btn.classList.toggle("checked");
-      updateSaveButtonState(containerId, saveBtnId);
-    });
+function attachExerciseListeners(exerciseEl, containerId, saveBtnId) {
+  const btn = exerciseEl.querySelector(".done-check");
+  btn.addEventListener("click", () => {
+    btn.classList.toggle("checked");
+    updateSaveButtonState(containerId, saveBtnId);
   });
+}
 
+function renderExercises(list, containerId, saveBtnId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = list.map(exerciseHTML).join("");
+  container.querySelectorAll(".exercise").forEach(el => attachExerciseListeners(el, containerId, saveBtnId));
   updateSaveButtonState(containerId, saveBtnId);
+}
+
+// Adds one extra exercise to an already-rendered day without disturbing
+// the weight/done state of exercises already on screen.
+function appendExercise(ex, list, containerId, saveBtnId) {
+  list.push(ex);
+  const container = document.getElementById(containerId);
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = exerciseHTML(ex).trim();
+  const exerciseEl = wrapper.firstElementChild;
+  container.appendChild(exerciseEl);
+  attachExerciseListeners(exerciseEl, containerId, saveBtnId);
+}
+
+function currentExerciseNames(list) {
+  return new Set(list.map(ex => ex.name));
+}
+
+// Keeps a day's "add an exercise" dropdown limited to catalogue entries not
+// already present on that day (built-in or previously added), so nothing
+// can be added twice.
+function refreshAddExerciseOptions(selectEl, list) {
+  const present = currentExerciseNames(list);
+  const available = [...exerciseCatalogue.keys()].filter(name => !present.has(name));
+  selectEl.innerHTML = available.length
+    ? available.map(name => `<option value="${name}">${name}</option>`).join("")
+    : `<option value="">All exercises already added</option>`;
+  selectEl.disabled = available.length === 0;
+}
+
+function addExtraExercise(name, list, containerId, saveBtnId, selectEl) {
+  if (!name || !exerciseCatalogue.has(name)) return;
+  const base = exerciseCatalogue.get(name);
+  const ex = { ...base, id: "extra-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-") };
+  appendExercise(ex, list, containerId, saveBtnId);
+  refreshAddExerciseOptions(selectEl, list);
 }
 
 renderExercises(day1Exercises, "day1-exercises", "save-day1");
@@ -821,11 +912,25 @@ const todayStr = toDateInputValue(new Date());
 dateDay1.value = todayStr;
 dateDay2.value = todayStr;
 
+const addSelectDay1 = document.getElementById("add-exercise-select-day1");
+const addBtnDay1 = document.getElementById("add-exercise-btn-day1");
+const addSelectDay2 = document.getElementById("add-exercise-select-day2");
+const addBtnDay2 = document.getElementById("add-exercise-btn-day2");
+
+refreshAddExerciseOptions(addSelectDay1, day1Exercises);
+addBtnDay1.addEventListener("click", () => {
+  addExtraExercise(addSelectDay1.value, day1Exercises, "day1-exercises", "save-day1", addSelectDay1);
+});
+addBtnDay2.addEventListener("click", () => {
+  addExtraExercise(addSelectDay2.value, day2Exercises, "day2-exercises", "save-day2", addSelectDay2);
+});
+
 function refreshDay2() {
   const weekNum = getISOWeek(dateDay2.value);
   const isOddWeek = weekNum % 2 === 1;
   day2Exercises = buildDay2Exercises(isOddWeek);
   renderExercises(day2Exercises, "day2-exercises", "save-day2");
+  refreshAddExerciseOptions(addSelectDay2, day2Exercises);
   document.getElementById("week-badge").textContent =
     formatDisplayDate(dateDay2.value) + " — " + (isOddWeek ? "Bench press week" : "Shoulder press week");
 }
@@ -990,9 +1095,7 @@ document.getElementById("clear-history").addEventListener("click", async () => {
 });
 
 // Progress chart — plain canvas, no chart library needed.
-const allExerciseNames = [...day1Exercises, ...buildDay2Exercises(true), ...buildDay2Exercises(false)]
-  .map(e => e.name)
-  .filter((name, i, arr) => arr.indexOf(name) === i);
+const allExerciseNames = [...exerciseCatalogue.keys()];
 
 const chartSelect = document.getElementById("chart-exercise");
 chartSelect.innerHTML = allExerciseNames.map(name => `<option value="${name}">${name}</option>`).join("");
