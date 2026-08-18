@@ -742,6 +742,25 @@ function parseWeightNum(str) {
   return match ? parseFloat(match[0]) : null;
 }
 
+// Strips a weight field down to digits and a single decimal point as the
+// user types, so entries like "8.8.8" or free-text notes can't happen.
+function sanitizeWeightInput(value) {
+  let cleaned = value.replace(/[^\d.]/g, "");
+  const firstDot = cleaned.indexOf(".");
+  if (firstDot !== -1) {
+    cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
+  }
+  return cleaned;
+}
+
+// A weight field is valid if it's empty (weight is optional), the
+// bodyweight-locked sentinel, or a plain positive whole/decimal number —
+// "0" and anything non-numeric (e.g. an unfinished "8.") are rejected.
+function isValidWeightEntry(value) {
+  if (!value || value === "Bodyweight") return true;
+  return /^\d+(\.\d+)?$/.test(value) && parseFloat(value) > 0;
+}
+
 async function getAllRecords() {
   const keysResult = await storage.list("session:");
   const keys = (keysResult && keysResult.keys) ? keysResult.keys : [];
@@ -895,7 +914,7 @@ function exerciseHTML(ex) {
         <a class="ex-link" href="${ex.ref}" target="_blank" rel="noopener">Watch ↗</a>
       </div>
       <div class="ex-inputs">
-        <input type="text" inputmode="decimal" placeholder="Weight / notes" data-field="weight" data-id="${ex.id}">
+        <input type="text" inputmode="decimal" placeholder="Weight" data-field="weight" data-id="${ex.id}">
         <div class="bw-toggle" data-field="bodyweight" data-id="${ex.id}" title="Bodyweight only — no added weight">BW</div>
         <div class="done-check" data-field="done" data-id="${ex.id}">✓</div>
       </div>
@@ -910,10 +929,14 @@ function attachExerciseListeners(exerciseEl, containerId, saveBtnId) {
     updateSaveButtonState(containerId, saveBtnId);
   });
 
+  const weightInput = exerciseEl.querySelector('input[data-field="weight"]');
+  weightInput.addEventListener("input", () => {
+    weightInput.value = sanitizeWeightInput(weightInput.value);
+  });
+
   // Bodyweight toggle locks the weight field to "Bodyweight" instead of a
   // number, restoring whatever was typed there if it gets unticked.
   const bwBtn = exerciseEl.querySelector(".bw-toggle");
-  const weightInput = exerciseEl.querySelector('input[data-field="weight"]');
   bwBtn.addEventListener("click", () => {
     bwBtn.classList.toggle("checked");
     if (bwBtn.classList.contains("checked")) {
@@ -1052,16 +1075,22 @@ async function saveSession(dayKey, dayLabel, exercises, containerId, statusId, d
   }
 
   const entries = [];
-  exercises.forEach(ex => {
+  for (const ex of exercises) {
     const weightInput = container.querySelector(`input[data-id="${ex.id}"][data-field="weight"]`);
     const doneBtn = container.querySelector(`.done-check[data-id="${ex.id}"]`);
+    const weight = weightInput.value.trim();
+    if (!isValidWeightEntry(weight)) {
+      statusEl.textContent = `"${weight}" isn't a valid weight for ${ex.name} — use a number greater than 0, like 80 or 62.5`;
+      setTimeout(() => { statusEl.textContent = ""; }, 5000);
+      return;
+    }
     entries.push({
       name: ex.name,
       target: ex.target,
-      weight: weightInput.value.trim(),
+      weight,
       done: doneBtn.classList.contains("checked")
     });
-  });
+  }
 
   const record = {
     day: dayLabel,
