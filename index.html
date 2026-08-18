@@ -143,6 +143,32 @@
     font-size: 13.5px;
   }
   .ex-inputs input[type="text"]::placeholder { color: var(--text-muted); }
+  .ex-inputs input[type="text"]:disabled {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .bw-toggle {
+    height: 34px;
+    padding: 0 9px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .bw-toggle.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
   .done-check {
     width: 34px;
     height: 34px;
@@ -847,6 +873,7 @@ function exerciseHTML(ex) {
       </div>
       <div class="ex-inputs">
         <input type="text" inputmode="decimal" placeholder="Weight / notes" data-field="weight" data-id="${ex.id}">
+        <div class="bw-toggle" data-field="bodyweight" data-id="${ex.id}" title="Bodyweight only — no added weight">BW</div>
         <div class="done-check" data-field="done" data-id="${ex.id}">✓</div>
       </div>
     </div>
@@ -854,10 +881,26 @@ function exerciseHTML(ex) {
 }
 
 function attachExerciseListeners(exerciseEl, containerId, saveBtnId) {
-  const btn = exerciseEl.querySelector(".done-check");
-  btn.addEventListener("click", () => {
-    btn.classList.toggle("checked");
+  const doneBtn = exerciseEl.querySelector(".done-check");
+  doneBtn.addEventListener("click", () => {
+    doneBtn.classList.toggle("checked");
     updateSaveButtonState(containerId, saveBtnId);
+  });
+
+  // Bodyweight toggle locks the weight field to "Bodyweight" instead of a
+  // number, restoring whatever was typed there if it gets unticked.
+  const bwBtn = exerciseEl.querySelector(".bw-toggle");
+  const weightInput = exerciseEl.querySelector('input[data-field="weight"]');
+  bwBtn.addEventListener("click", () => {
+    bwBtn.classList.toggle("checked");
+    if (bwBtn.classList.contains("checked")) {
+      weightInput.dataset.prevValue = weightInput.value;
+      weightInput.value = "Bodyweight";
+      weightInput.disabled = true;
+    } else {
+      weightInput.value = weightInput.dataset.prevValue || "";
+      weightInput.disabled = false;
+    }
   });
 }
 
