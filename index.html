@@ -118,6 +118,7 @@
   }
   .ex-name { font-size: 14.5px; font-weight: 500; margin: 0 0 2px; }
   .ex-target { font-size: 12.5px; color: var(--text-secondary); margin: 0; }
+  .ex-alt-note { font-size: 11px; color: var(--text-muted); font-style: italic; margin: 3px 0 0; }
   .ex-link {
     font-size: 12px;
     color: var(--accent-dark);
@@ -822,13 +823,25 @@ function formatDisplayDate(dateStr) {
   return date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
 
+// Exercises that used to share one "X or Y" slot are now two separate,
+// independently-tracked exercises linked by altGroup/altOf, so PR and
+// trend tracking (keyed on exercise name) never blends two different
+// lifts under one ambiguous label. Only the first of each pair stays in
+// the day's default list — the other lives in the catalogue below and
+// can be added alongside or instead of it via "Add exercise".
 const day1Exercises = [
-  { id: "t1", name: "Goblet squat or trap bar deadlift", target: "3 x 6-8", ref: ytLink("goblet squat") },
+  { id: "t1", name: "Goblet squat", altGroup: "t1", altOf: "Trap bar deadlift", target: "3 x 6-8", ref: ytLink("goblet squat") },
   { id: "t2", name: "Bulgarian split squat", target: "2 x 8 / side", ref: ytLink("bulgarian split squat") },
   { id: "t3", name: "Single-arm DB row", target: "3 x 8-10 / side", ref: ytLink("single arm dumbbell row") },
   { id: "t4", name: "Single-leg calf raise (straight knee)", target: "3 x 12-15 / side", ref: ytLink("single leg calf raise straight knee") },
-  { id: "t5", name: "Hanging knee raise or toes-to-bar", target: "3 x 8-10", ref: ytLink("hanging knee raise") },
-  { id: "t6", name: "Cable woodchop or Pallof press", target: "2 x 10 / side", ref: ytLink("pallof press") }
+  { id: "t5", name: "Hanging knee raise", altGroup: "t5", altOf: "Toes-to-bar", target: "3 x 8-10", ref: ytLink("hanging knee raise") },
+  { id: "t6", name: "Cable woodchop", altGroup: "t6", altOf: "Pallof press", target: "2 x 10 / side", ref: ytLink("cable woodchop") }
+];
+
+const day1Alternates = [
+  { id: "t1-alt", name: "Trap bar deadlift", altGroup: "t1", altOf: "Goblet squat", target: "3 x 6-8", ref: ytLink("trap bar deadlift") },
+  { id: "t5-alt", name: "Toes-to-bar", altGroup: "t5", altOf: "Hanging knee raise", target: "3 x 8-10", ref: ytLink("toes to bar") },
+  { id: "t6-alt", name: "Pallof press", altGroup: "t6", altOf: "Cable woodchop", target: "2 x 10 / side", ref: ytLink("pallof press") }
 ];
 
 function buildDay2Exercises(isOddWeek) {
@@ -836,21 +849,30 @@ function buildDay2Exercises(isOddWeek) {
     ? { id: "h2", name: "Bench press", target: "3 x 6-8", ref: ytLink("barbell bench press") }
     : { id: "h2", name: "Shoulder press", target: "3 x 8-10", ref: ytLink("dumbbell shoulder press") };
   return [
-    { id: "h1", name: "Weighted pull-ups or lat pulldown", target: "3 x 6-8", ref: ytLink("weighted pull up") },
+    { id: "h1", name: "Weighted pull-ups", altGroup: "h1", altOf: "Lat pulldown", target: "3 x 6-8", ref: ytLink("weighted pull up") },
     push,
     { id: "h3", name: "Single-leg calf raise (bent knee)", target: "3 x 12-15 / side", ref: ytLink("single leg calf raise bent knee soleus") },
     { id: "h4", name: "Bicep curls", target: "2 x 10-12", ref: ytLink("dumbbell bicep curl") },
-    { id: "h5", name: "Tricep pushdown or dips", target: "2 x 10-12", ref: ytLink("tricep pushdown") },
-    { id: "h6", name: "Plank or ab wheel", target: "2 x 30-45s", ref: ytLink("ab wheel rollout") }
+    { id: "h5", name: "Tricep pushdown", altGroup: "h5", altOf: "Triceps dip", target: "2 x 10-12", ref: ytLink("tricep pushdown") },
+    { id: "h6", name: "Plank", altGroup: "h6", altOf: "Ab wheel rollout", target: "2 x 30-45s", ref: ytLink("plank exercise") }
   ];
 }
+
+const day2Alternates = [
+  { id: "h1-alt", name: "Lat pulldown", altGroup: "h1", altOf: "Weighted pull-ups", target: "3 x 8-10", ref: ytLink("lat pulldown") },
+  { id: "h5-alt", name: "Triceps dip", altGroup: "h5", altOf: "Tricep pushdown", target: "2 x 8-12", ref: ytLink("triceps dip") },
+  { id: "h6-alt", name: "Ab wheel rollout", altGroup: "h6", altOf: "Plank", target: "2 x 8-12", ref: ytLink("ab wheel rollout") }
+];
 
 let day2Exercises = [];
 
 // Every exercise across both days, deduped by name — the source list for
 // each day's "add an exercise" picker and the history chart's selector.
 const exerciseCatalogue = new Map();
-[...day1Exercises, ...buildDay2Exercises(true), ...buildDay2Exercises(false)].forEach(ex => {
+[
+  ...day1Exercises, ...day1Alternates,
+  ...buildDay2Exercises(true), ...buildDay2Exercises(false), ...day2Alternates
+].forEach(ex => {
   if (!exerciseCatalogue.has(ex.name)) exerciseCatalogue.set(ex.name, ex);
 });
 
@@ -868,6 +890,7 @@ function exerciseHTML(ex) {
         <div>
           <p class="ex-name">${ex.name}</p>
           <p class="ex-target">${ex.target}</p>
+          ${ex.altOf ? `<p class="ex-alt-note">Equivalent to ${ex.altOf} — add it below to log that instead, or as well</p>` : ""}
         </div>
         <a class="ex-link" href="${ex.ref}" target="_blank" rel="noopener">Watch ↗</a>
       </div>
