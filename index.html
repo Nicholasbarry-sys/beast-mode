@@ -388,6 +388,162 @@
     cursor: pointer;
     margin-top: 14px;
   }
+  .membership-card {
+    position: relative;
+    background: linear-gradient(155deg, #2c2c2a, #171715);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 16px 14px;
+    margin-bottom: 16px;
+    color: #f0efe9;
+    overflow: hidden;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  }
+  .membership-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: var(--danger);
+  }
+  .mc-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 60px 12px 0;
+  }
+  .mc-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: 20px;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .mc-since {
+    font-size: 10px;
+    color: #9a9a94;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .mc-gym {
+    font-family: 'Anton', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    line-height: 1.05;
+    margin: 0 0 12px;
+    transform: skewX(-4deg);
+    transform-origin: left;
+    word-break: break-word;
+  }
+  .mc-name-label {
+    font-size: 9.5px;
+    color: #9a9a94;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 2px;
+  }
+  .mc-name {
+    font-size: 15px;
+    font-weight: 600;
+    font-style: italic;
+    margin: 0 0 10px;
+    color: #f0efe9;
+  }
+  .mc-number {
+    font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.05em;
+    color: #cfcec7;
+    margin: 0 0 14px;
+  }
+  .mc-barcode-strip {
+    background: #f5f4ef;
+    border-radius: 8px;
+    padding: 8px 8px 4px;
+    display: flex;
+    justify-content: center;
+  }
+  .mc-barcode { width: 100%; height: auto; max-height: 64px; }
+  .mc-edit-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #f0efe9;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .mc-edit-btn:active { opacity: 0.8; }
+  .add-gym-btn {
+    width: 100%;
+    padding: 12px;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .add-gym-btn:active { opacity: 0.85; }
+  .membership-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .mf-intro {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 4px;
+  }
+  .mf-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 12px 0 4px;
+  }
+  .membership-form input[type="text"] {
+    width: 100%;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  .mf-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .mf-actions .save-btn { flex: 1; width: auto; }
+  .mf-cancel {
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .mf-cancel:active { opacity: 0.85; }
   .pr-tag {
     display: inline-block;
     background: var(--accent-light);
@@ -548,6 +704,7 @@
   <button class="tab active" data-tab="day1">Training Day 1</button>
   <button class="tab" data-tab="day2">Training Day 2</button>
   <button class="tab" data-tab="history">History</button>
+  <button class="tab" data-tab="membership">Membership</button>
 </div>
 
 <!-- TRAINING DAY 1 -->
@@ -604,6 +761,11 @@
   <button class="export-btn" id="export-csv">Export log as CSV</button>
 </div>
 
+<!-- MEMBERSHIP -->
+<div class="day-panel" id="panel-membership">
+  <div id="membership-content"></div>
+</div>
+
 </div><!-- /app-content -->
 
 <!--
@@ -616,6 +778,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<!-- Renders the scannable barcode on membership cards. -->
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -1065,6 +1229,9 @@ document.querySelectorAll(".tab").forEach(tab => {
       loadHistory();
       renderChart();
     }
+    if (tab.dataset.tab === "membership") {
+      refreshMembership();
+    }
   });
 });
 
@@ -1206,6 +1373,194 @@ document.getElementById("clear-history").addEventListener("click", async () => {
     alert("Couldn't clear history — try again");
   }
 });
+
+// Escapes user-supplied text before it's interpolated into innerHTML or an
+// HTML attribute value, so a gym name containing markup can't inject.
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function generateId() {
+  return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+}
+
+// --- Membership cards ---
+// Each gym's membership lives in its own "membership:<id>" record,
+// independent of the "session:" records History deals with, so clearing
+// workout history never touches it.
+let membershipCards = [];
+let membershipFormState = null; // null = card list only; {} = adding; {key,...} = editing
+
+async function getMembershipCards() {
+  const keysResult = await storage.list("membership:");
+  const keys = (keysResult && keysResult.keys) ? keysResult.keys : [];
+  const cards = [];
+  for (const k of keys) {
+    try {
+      const r = await storage.get(k);
+      if (r && r.value) cards.push({ key: k, ...JSON.parse(r.value) });
+    } catch (e) { /* skip unreadable entries */ }
+  }
+  cards.sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0));
+  return cards;
+}
+
+async function saveMembershipCard(key, gymName, memberNumber, createdAt) {
+  await storage.set(key, JSON.stringify({ gymName, memberNumber, createdAt }));
+}
+
+function membershipCardHTML(card) {
+  const since = new Date(card.createdAt);
+  const sinceYear = isNaN(since) ? "" : since.getFullYear();
+  return `
+    <div class="membership-card" data-key="${escapeHTML(card.key)}">
+      <button type="button" class="mc-edit-btn" data-key="${escapeHTML(card.key)}">Edit</button>
+      <div class="mc-topline">
+        <span class="mc-badge">Certified dirtbag</span>
+        ${sinceYear ? `<span class="mc-since">Member since ${sinceYear}</span>` : ""}
+      </div>
+      <p class="mc-gym">${escapeHTML(card.gymName)}</p>
+      <p class="mc-name-label">Member</p>
+      <p class="mc-name">Don't you know who I am?!</p>
+      <p class="mc-number">No. ${escapeHTML(card.memberNumber)}</p>
+      <div class="mc-barcode-strip">
+        <svg class="mc-barcode" id="barcode-${escapeHTML(card.key)}"></svg>
+      </div>
+    </div>
+  `;
+}
+
+function membershipFormHTML(state) {
+  const isEdit = !!(state && state.key);
+  const showCancel = isEdit || membershipCards.length > 0;
+  return `
+    <div class="membership-form" id="membership-form">
+      ${isEdit || membershipCards.length > 0
+        ? `<p class="section-title" style="margin-top:0;">${isEdit ? "Edit gym membership" : "Add gym membership"}</p>`
+        : `<p class="mf-intro">First time here — add your climbing gym's name and your membership number to generate a scannable card.</p>`
+      }
+      <label class="mf-label" for="mf-gym-name">Gym name</label>
+      <input type="text" id="mf-gym-name" placeholder="e.g. The Depot" value="${state && state.gymName ? escapeHTML(state.gymName) : ""}">
+      <label class="mf-label" for="mf-member-number">Membership number</label>
+      <input type="text" id="mf-member-number" placeholder="e.g. 048213" value="${state && state.memberNumber ? escapeHTML(state.memberNumber) : ""}">
+      <div class="mf-actions">
+        <button type="button" class="save-btn" id="mf-save">${isEdit ? "Save changes" : "Save membership"}</button>
+        ${showCancel ? `<button type="button" class="mf-cancel" id="mf-cancel">Cancel</button>` : ""}
+      </div>
+      <div class="save-status" id="mf-status"></div>
+    </div>
+  `;
+}
+
+function renderBarcode(card) {
+  const el = document.getElementById("barcode-" + card.key);
+  if (!el || !card.memberNumber) return;
+  try {
+    JsBarcode(el, card.memberNumber, {
+      format: "CODE128",
+      lineColor: "#1a1a18",
+      width: 2,
+      height: 46,
+      displayValue: true,
+      fontSize: 13,
+      margin: 4,
+      background: "transparent"
+    });
+  } catch (err) { /* leave the strip blank if the number can't be encoded */ }
+}
+
+function wireMembershipCardButtons() {
+  document.querySelectorAll(".mc-edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const card = membershipCards.find(c => c.key === btn.dataset.key);
+      if (!card) return;
+      membershipFormState = { key: card.key, gymName: card.gymName, memberNumber: card.memberNumber, createdAt: card.createdAt };
+      renderMembershipPanel();
+    });
+  });
+}
+
+function wireMembershipForm() {
+  const saveBtn = document.getElementById("mf-save");
+  const cancelBtn = document.getElementById("mf-cancel");
+  const statusEl = document.getElementById("mf-status");
+
+  saveBtn.addEventListener("click", async () => {
+    const gymName = document.getElementById("mf-gym-name").value.trim();
+    const memberNumber = document.getElementById("mf-member-number").value.trim();
+    if (!gymName || !memberNumber) {
+      statusEl.textContent = "Enter both a gym name and membership number";
+      return;
+    }
+    const isEdit = !!(membershipFormState && membershipFormState.key);
+    const key = isEdit ? membershipFormState.key : "membership:" + generateId();
+    const createdAt = isEdit ? membershipFormState.createdAt : new Date().toISOString();
+    statusEl.textContent = "Saving…";
+    try {
+      await saveMembershipCard(key, gymName, memberNumber, createdAt);
+      membershipFormState = null;
+      await refreshMembership();
+    } catch (err) {
+      statusEl.textContent = "Couldn't save — try again";
+    }
+  });
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      membershipFormState = null;
+      renderMembershipPanel();
+    });
+  }
+}
+
+function renderMembershipPanel() {
+  const container = document.getElementById("membership-content");
+
+  // First-time visit with nothing saved yet — go straight to the form.
+  if (membershipCards.length === 0 && !membershipFormState) {
+    membershipFormState = {};
+  }
+
+  const editingKey = membershipFormState && membershipFormState.key;
+  let html = membershipCards
+    .filter(c => c.key !== editingKey)
+    .map(membershipCardHTML)
+    .join("");
+
+  if (membershipFormState) {
+    html += membershipFormHTML(membershipFormState);
+  } else if (membershipCards.length > 0) {
+    html += `<button type="button" class="add-gym-btn" id="add-gym-btn">+ Add another gym</button>`;
+  }
+
+  container.innerHTML = html;
+
+  membershipCards.filter(c => c.key !== editingKey).forEach(renderBarcode);
+  wireMembershipCardButtons();
+  if (membershipFormState) wireMembershipForm();
+
+  const addBtn = document.getElementById("add-gym-btn");
+  if (addBtn) {
+    addBtn.addEventListener("click", () => {
+      membershipFormState = {};
+      renderMembershipPanel();
+    });
+  }
+}
+
+async function refreshMembership() {
+  try {
+    membershipCards = await getMembershipCards();
+  } catch (err) {
+    membershipCards = [];
+  }
+  renderMembershipPanel();
+}
 
 // Progress chart — plain canvas, no chart library needed.
 const allExerciseNames = [...exerciseCatalogue.keys()];
