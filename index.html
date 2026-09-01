@@ -465,11 +465,16 @@
   .mc-barcode-strip {
     background: #f5f4ef;
     border-radius: 8px;
-    padding: 8px 8px 4px;
+    padding: 14px 14px 10px;
     display: flex;
     justify-content: center;
   }
-  .mc-barcode { width: 100%; height: auto; max-height: 64px; }
+  /* Sized to scan reliably off a phone screen (~6" diagonal) when read by
+     another device's camera — max-height is a safety net for unusually
+     short membership numbers, not the normal constraint; width:100% with
+     the taller aspect ratio JsBarcode is given below is what actually
+     makes it big. */
+  .mc-barcode { width: 100%; height: auto; max-height: 220px; }
   .mc-edit-btn {
     position: absolute;
     top: 16px;
@@ -1396,6 +1401,68 @@ function generateId() {
 let membershipCards = [];
 let membershipFormState = null; // null = card list only; {} = adding; {key,...} = editing
 
+// The card's "member name" is never a real name — it's a randomly picked
+// dirtbag brag, reshuffled per card each time the tab is opened (or the
+// list is refreshed after a save). cardDisplayNames holds this open
+// session's picks so it stays put while just editing/viewing.
+const dirtbagNames = [
+  "Don't you know who I am?!",
+  "I sent this before it was cool.",
+  "Local legend, allegedly.",
+  "Ask anyone at the crag, they'll vouch for me.",
+  "I've got a documentary in the works.",
+  "Sponsored by nobody, feared by everyone.",
+  "My beta is basically patented.",
+  "I kind of invented dynos.",
+  "This is my third home gym this month.",
+  "I free-soloed my student loans.",
+  "National champion of vibes.",
+  "My chalk bag has its own fan base.",
+  "I'm kind of a big deal in the parking lot.",
+  "Undefeated in the cave, probably.",
+  "I taught the coach everything they know.",
+  "My Instagram is private for a reason.",
+  "Once flashed a V10, still talking about it.",
+  "Professional dirtbag, unlicensed.",
+  "My van has better reviews than most hotels.",
+  "I peaked in the crag parking lot in 2019.",
+  "Currently between sends.",
+  "My belay technique is basically a public service.",
+  "I've got beta nobody asked for.",
+  "Ask the route setter, we go way back.",
+  "Living the dream, questionable credit score.",
+  "I invented the crimp, probably.",
+  "My knees have seen things.",
+  "Retired pro, unofficially.",
+  "I warm up on your project.",
+  "Full-time athlete, part-time everything else.",
+  "My tape job is a work of art.",
+  "This gym owes me a statue.",
+  "I've fallen off harder things than this.",
+  "My resume is just a list of sends.",
+  "Locally famous, nationally unknown.",
+  "I've got more chalk than sense.",
+  "Ask around, I'm kind of legendary.",
+  "My crash pad has frequent flyer miles.",
+  "I discovered this gym before it was cool.",
+  "My forearms have their own zip code.",
+  "I've climbed things you've only seen on YouTube.",
+  "Certified sandbagger.",
+  "My send train has no brakes.",
+  "I taught myself to fall with style.",
+  "Once got a high five from the route setter.",
+  "My beta video has 12 views, all mine.",
+  "I peaked in the bouldering cave.",
+  "Undisputed champion of the crash pad.",
+  "My grip strength is my whole personality.",
+  "Don't ask, I probably already sent it."
+];
+let cardDisplayNames = new Map(); // card.key -> this open session's picked line
+
+function pickRandomMemberName() {
+  return dirtbagNames[Math.floor(Math.random() * dirtbagNames.length)];
+}
+
 async function getMembershipCards() {
   const keysResult = await storage.list("membership:");
   const keys = (keysResult && keysResult.keys) ? keysResult.keys : [];
@@ -1426,7 +1493,7 @@ function membershipCardHTML(card) {
       </div>
       <p class="mc-gym">${escapeHTML(card.gymName)}</p>
       <p class="mc-name-label">Member</p>
-      <p class="mc-name">Don't you know who I am?!</p>
+      <p class="mc-name">${escapeHTML(cardDisplayNames.get(card.key) || dirtbagNames[0])}</p>
       <p class="mc-number">No. ${escapeHTML(card.memberNumber)}</p>
       <div class="mc-barcode-strip">
         <svg class="mc-barcode" id="barcode-${escapeHTML(card.key)}"></svg>
@@ -1461,14 +1528,19 @@ function renderBarcode(card) {
   const el = document.getElementById("barcode-" + card.key);
   if (!el || !card.memberNumber) return;
   try {
+    // The SVG scales to the card's full width via CSS (width:100%,
+    // height:auto), so what actually makes the rendered barcode bigger is
+    // a taller intrinsic aspect ratio — hence the large height/fontSize
+    // here rather than a wider one. Sized for another phone's camera to
+    // scan it off this screen from a normal arm's-length distance.
     JsBarcode(el, card.memberNumber, {
       format: "CODE128",
       lineColor: "#1a1a18",
-      width: 2,
-      height: 46,
+      width: 2.6,
+      height: 110,
       displayValue: true,
-      fontSize: 13,
-      margin: 4,
+      fontSize: 16,
+      margin: 6,
       background: "transparent"
     });
   } catch (err) { /* leave the strip blank if the number can't be encoded */ }
@@ -1559,6 +1631,7 @@ async function refreshMembership() {
   } catch (err) {
     membershipCards = [];
   }
+  cardDisplayNames = new Map(membershipCards.map(c => [c.key, pickRandomMemberName()]));
   renderMembershipPanel();
 }
 
