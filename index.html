@@ -408,6 +408,21 @@
     height: 5px;
     background: var(--danger);
   }
+  /* Only applied once there's more than one card — tapping one isolates it
+     as the scan target so a nearby scanner can't pick up the wrong card. */
+  .membership-card.selectable { cursor: pointer; }
+  .membership-card.selected {
+    box-shadow: 0 0 0 2px var(--accent), 0 6px 16px rgba(0, 0, 0, 0.25);
+  }
+  .membership-card.dimmed {
+    opacity: 0.35;
+    filter: grayscale(0.7);
+    transition: opacity 0.15s ease, filter 0.15s ease;
+  }
+  /* Blurring the barcode itself (not just fading the card) is what
+     actually guarantees a scanner can't decode it while dimmed — reduced
+     opacity/contrast alone can still be readable to a robust scanner. */
+  .membership-card.dimmed .mc-barcode-strip { filter: blur(6px); }
   .mc-topline {
     display: flex;
     justify-content: space-between;
@@ -1400,6 +1415,7 @@ function generateId() {
 // workout history never touches it.
 let membershipCards = [];
 let membershipFormState = null; // null = card list only; {} = adding; {key,...} = editing
+let selectedCardKey = null; // which card (if any) is isolated as the scan target — only meaningful when 2+ cards exist
 
 // The card's "member name" is never a real name — it's a randomly picked
 // dirtbag brag, reshuffled per card each time the tab is opened (or the
@@ -1481,11 +1497,15 @@ async function saveMembershipCard(key, gymName, memberNumber, createdAt) {
   await storage.set(key, JSON.stringify({ gymName, memberNumber, createdAt }));
 }
 
-function membershipCardHTML(card) {
+function membershipCardHTML(card, { selectable = false, selected = false, dimmed = false } = {}) {
   const since = new Date(card.createdAt);
   const sinceYear = isNaN(since) ? "" : since.getFullYear();
+  const classes = ["membership-card"];
+  if (selectable) classes.push("selectable");
+  if (selected) classes.push("selected");
+  if (dimmed) classes.push("dimmed");
   return `
-    <div class="membership-card" data-key="${escapeHTML(card.key)}">
+    <div class="${classes.join(" ")}" data-key="${escapeHTML(card.key)}">
       <button type="button" class="mc-edit-btn" data-key="${escapeHTML(card.key)}">Edit</button>
       <div class="mc-topline">
         <span class="mc-badge">Certified dirtbag</span>
@@ -1548,13 +1568,26 @@ function renderBarcode(card) {
 
 function wireMembershipCardButtons() {
   document.querySelectorAll(".mc-edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation(); // don't also trigger the card's own tap-to-select handler
       const card = membershipCards.find(c => c.key === btn.dataset.key);
       if (!card) return;
       membershipFormState = { key: card.key, gymName: card.gymName, memberNumber: card.memberNumber, createdAt: card.createdAt };
       renderMembershipPanel();
     });
   });
+
+  // Tap-to-isolate only makes sense once there's more than one card to
+  // tell apart — with a single card there's nothing else to dim.
+  if (membershipCards.length > 1) {
+    document.querySelectorAll(".membership-card").forEach(cardEl => {
+      cardEl.addEventListener("click", () => {
+        const key = cardEl.dataset.key;
+        selectedCardKey = (selectedCardKey === key) ? null : key;
+        renderMembershipPanel();
+      });
+    });
+  }
 }
 
 function wireMembershipForm() {
@@ -1599,9 +1632,14 @@ function renderMembershipPanel() {
   }
 
   const editingKey = membershipFormState && membershipFormState.key;
+  const multipleCards = membershipCards.length > 1;
   let html = membershipCards
     .filter(c => c.key !== editingKey)
-    .map(membershipCardHTML)
+    .map(c => membershipCardHTML(c, {
+      selectable: multipleCards,
+      selected: multipleCards && selectedCardKey === c.key,
+      dimmed: multipleCards && !!selectedCardKey && selectedCardKey !== c.key
+    }))
     .join("");
 
   if (membershipFormState) {
@@ -1632,6 +1670,7 @@ async function refreshMembership() {
     membershipCards = [];
   }
   cardDisplayNames = new Map(membershipCards.map(c => [c.key, pickRandomMemberName()]));
+  selectedCardKey = null; // start fresh each time the tab is (re)opened or the list changes
   renderMembershipPanel();
 }
 
